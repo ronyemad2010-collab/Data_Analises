@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request
+import streamlit as st
 
-app = Flask(__name__)
+st.set_page_config(page_title="Data Analyzer", layout="wide")
 
 
 # ========== FUNCTIONS ==========
@@ -20,27 +20,18 @@ def median(arr):
 def analyze(data):
     data = sorted(data)
 
-    # mean
     mean = sum(data) / len(data)
-
-    # median
     med = median(data)
 
-    # variance
     variance = sum((x - mean) ** 2 for x in data) / len(data)
-
-    # std
     std = variance ** 0.5
 
-    # mode
     mode = max(set(data), key=data.count)
 
-    # min max range
     min_v = min(data)
     max_v = max(data)
     range_v = max_v - min_v
 
-    # Q1 Q3
     n = len(data)
     mid = n // 2
 
@@ -54,10 +45,8 @@ def analyze(data):
     Q1 = median(lower_half)
     Q3 = median(upper_half)
 
-    # IQR
     IQR = Q3 - Q1
 
-    # outliers
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
 
@@ -82,20 +71,36 @@ def analyze(data):
     }
 
 
-# ========== FLASK ROUTES ==========
+# ========== UI ==========
 
-@app.route("/", methods=["GET", "POST"])
-def home():
-    result = None
+st.title("📊 Data Analyzer Dashboard")
 
-    if request.method == "POST":
-        numbers = request.form["numbers"]
+numbers = st.text_input("Enter numbers separated by space")
 
-        data = [float(x) for x in numbers.split()]
-        result = analyze(data)
+if numbers:
 
-    return render_template("index.html", result=result)
+    data = [float(x) for x in numbers.split()]
+    result = analyze(data)
 
+    st.write("### Results")
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.write("Mean:", result["mean"])
+        st.write("Median:", result["median"])
+        st.write("Variance:", result["variance"])
+
+    with col2:
+        st.write("Std:", result["std"])
+        st.write("Mode:", result["mode"])
+        st.write("Min:", result["min"])
+
+    with col3:
+        st.write("Max:", result["max"])
+        st.write("Range:", result["range"])
+        st.write("IQR:", result["IQR"])
+
+    st.write("### Extra")
+    st.write("Q1:", result["Q1"], " | Q3:", result["Q3"])
+    st.write("Outliers:", result["outliers"])
